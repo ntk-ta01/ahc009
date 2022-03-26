@@ -2,7 +2,7 @@
 use proconio::{input, marker::Chars};
 use rand::{Rng, SeedableRng};
 
-const TIMELIMIT: f64 = 1.8;
+const TIMELIMIT: f64 = 1.9;
 const N: usize = 20;
 const L: usize = 200;
 const DIJ: [(usize, usize); 4] = [(!0, 0), (0, !0), (1, 0), (0, 1)];
@@ -68,18 +68,23 @@ fn main() {
         .collect::<String>()
         .chars()
         .collect::<Vec<char>>();
-    climbing(&input, &mut output, &mut timer, &mut rng);
+    annealing(&input, &mut output, &mut timer, &mut rng);
     let answer = output.iter().collect::<String>();
     println!("{}", answer);
     // eprintln!("{}", compute_score(&input, &output).0);
 }
 
-fn climbing(
+fn annealing(
     input: &Input,
     output: &mut Vec<char>,
     timer: &mut Timer,
     rng: &mut rand_chacha::ChaCha20Rng,
 ) {
+    const T0: f64 = 100.0;
+    const T1: f64 = 1.0;
+    let mut temp = T0;
+    let mut prob;
+
     let mut count = 0;
     let mut now_score = compute_score(input, output).0;
 
@@ -91,6 +96,7 @@ fn climbing(
             if passed >= 1.0 {
                 break;
             }
+            temp = T0.powf(1.0 - passed) * T1.powf(passed);
             count = 0;
         }
         count += 1;
@@ -112,7 +118,8 @@ fn climbing(
             new_out[update_index] = DIR[new_dir];
         }
         let new_score = compute_score(input, &new_out).0;
-        if rng.gen_bool(0.5) || now_score < new_score {
+        prob = f64::exp((new_score - now_score) as f64 / temp);
+        if now_score < new_score || rng.gen_bool(prob) {
             now_score = new_score;
             *output = new_out;
         }
