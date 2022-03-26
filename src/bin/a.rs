@@ -35,6 +35,24 @@ impl Input {
             _ => unreachable!(),
         }
     }
+
+    fn can_move2(&self, i: usize, j: usize, d: usize) -> bool {
+        let d_ori = match d {
+            0 => 2,
+            1 => 3,
+            2 => 0,
+            3 => 1,
+            _ => unreachable!(),
+        };
+        for d2 in 0..4 {
+            if d_ori == d2 || !self.can_move(i, j, d2) {
+                continue;
+            } else {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 fn parse_input() -> Input {
@@ -113,8 +131,16 @@ fn annealing(
         count += 1;
 
         let mut new_out = output.clone();
-        // 1点変更
-        {
+        // 2点swapと1点変更
+        if rng.gen_bool(0.2) {
+            // swap
+            let swap_index1 = rng.gen_range(0, L);
+            let swap_index2 = rng.gen_range(0, L);
+            let out1 = new_out[swap_index1];
+            let out2 = new_out[swap_index2];
+            new_out[swap_index1] = out2;
+            new_out[swap_index2] = out1;
+        } else {
             // update
             let update_index = rng.gen_range(0, L);
             let new_dir = rng.gen_range(0, 4);
@@ -150,8 +176,12 @@ fn compute_score(input: &Input, out: &[char]) -> (i64, String, Vec<Vec<f64>>) {
                         if input.can_move(i, j, d) {
                             let i2 = i + DIJ[d].0;
                             let j2 = j + DIJ[d].1;
-                            next[i2][j2] += crt[i][j] * (1.0 - input.p);
-                            next[i][j] += crt[i][j] * input.p;
+                            if input.can_move2(i2, j2, d) {
+                                next[i2][j2] += crt[i][j] * (1.0 - input.p);
+                                next[i][j] += crt[i][j] * input.p;
+                            } else {
+                                next[i][j] += crt[i][j];
+                            }
                         } else {
                             next[i][j] += crt[i][j];
                         }
