@@ -89,8 +89,8 @@ fn annealing(
     // s_temp: f64,
     // e_temp: f64,
 ) {
-    const T0: f64 = 100.0;
-    const T1: f64 = 1.0;
+    const T0: f64 = 90.0;
+    const T1: f64 = 0.1;
     let mut temp = T0;
     // let mut temp = s_temp;
     let mut prob;
@@ -140,7 +140,7 @@ fn annealing(
             best_output = output.clone();
         }
     }
-    println!("{}", best_score);
+    eprintln!("{}", best_score);
     *output = best_output;
 }
 
