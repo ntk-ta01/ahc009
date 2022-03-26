@@ -113,16 +113,8 @@ fn annealing(
         count += 1;
 
         let mut new_out = output.clone();
-        // 2点swapと1点変更
-        if rng.gen_bool(0.2) {
-            // swap
-            let swap_index1 = rng.gen_range(0, L);
-            let swap_index2 = rng.gen_range(0, L);
-            let out1 = new_out[swap_index1];
-            let out2 = new_out[swap_index2];
-            new_out[swap_index1] = out2;
-            new_out[swap_index2] = out1;
-        } else {
+        // 1点変更
+        {
             // update
             let update_index = rng.gen_range(0, L);
             let new_dir = rng.gen_range(0, 4);
