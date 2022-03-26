@@ -35,24 +35,6 @@ impl Input {
             _ => unreachable!(),
         }
     }
-
-    fn can_move2(&self, i: usize, j: usize, d: usize) -> bool {
-        let d_ori = match d {
-            0 => 2,
-            1 => 3,
-            2 => 0,
-            3 => 1,
-            _ => unreachable!(),
-        };
-        for d2 in 0..4 {
-            if d_ori == d2 || !self.can_move(i, j, d2) {
-                continue;
-            } else {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 fn parse_input() -> Input {
@@ -176,12 +158,8 @@ fn compute_score(input: &Input, out: &[char]) -> (i64, String, Vec<Vec<f64>>) {
                         if input.can_move(i, j, d) {
                             let i2 = i + DIJ[d].0;
                             let j2 = j + DIJ[d].1;
-                            if input.can_move2(i2, j2, d) {
-                                next[i2][j2] += crt[i][j] * (1.0 - input.p);
-                                next[i][j] += crt[i][j] * input.p;
-                            } else {
-                                next[i][j] += crt[i][j];
-                            }
+                            next[i2][j2] += crt[i][j] * (1.0 - input.p);
+                            next[i][j] += crt[i][j] * input.p;
                         } else {
                             next[i][j] += crt[i][j];
                         }
