@@ -38,12 +38,15 @@ impl Input {
 }
 
 fn parse_input() -> Input {
+    // fn parse_input() -> (Input, f64, f64) {
     input! {
         s: (usize, usize),
         t: (usize, usize),
         p: f64,
         hs: [Chars; N],
         vs: [Chars; N - 1],
+        // s_temp: f64,
+        // e_temp: f64,
     }
     let hs = hs
         .into_iter()
@@ -54,6 +57,7 @@ fn parse_input() -> Input {
         .map(|v| v.into_iter().map(|a| a == '1').collect())
         .collect();
     Input { s, t, p, hs, vs }
+    // (Input { s, t, p, hs, vs }, s_temp, e_temp)
 }
 
 fn main() {
@@ -61,6 +65,8 @@ fn main() {
     let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(0);
 
     let input = parse_input();
+    // let (input, s_temp, e_temp) = parse_input();
+
     let mut output = DIR
         .iter()
         .cycle()
@@ -69,6 +75,7 @@ fn main() {
         .chars()
         .collect::<Vec<char>>();
     annealing(&input, &mut output, &mut timer, &mut rng);
+    // annealing(&input, &mut output, &mut timer, &mut rng, s_temp, e_temp);
     let answer = output.iter().collect::<String>();
     println!("{}", answer);
     // eprintln!("{}", compute_score(&input, &output).0);
@@ -79,10 +86,13 @@ fn annealing(
     output: &mut Vec<char>,
     timer: &mut Timer,
     rng: &mut rand_chacha::ChaCha20Rng,
+    // s_temp: f64,
+    // e_temp: f64,
 ) {
     const T0: f64 = 100.0;
     const T1: f64 = 1.0;
     let mut temp = T0;
+    // let mut temp = s_temp;
     let mut prob;
 
     let mut count = 0;
@@ -97,6 +107,7 @@ fn annealing(
                 break;
             }
             temp = T0.powf(1.0 - passed) * T1.powf(passed);
+            // temp = s_temp.powf(1.0 - passed) * e_temp.powf(passed);
             count = 0;
         }
         count += 1;
@@ -129,7 +140,7 @@ fn annealing(
             best_output = output.clone();
         }
     }
-    // eprintln!("{}", best_score);
+    println!("{}", best_score);
     *output = best_output;
 }
 
