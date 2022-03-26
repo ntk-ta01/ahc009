@@ -114,7 +114,7 @@ fn annealing(
 
         let mut new_out = output.clone();
         // 2点swapと1点変更
-        if rng.gen_bool(0.5) {
+        if rng.gen_bool(0.2) {
             // swap
             let swap_index1 = rng.gen_range(0, L);
             let swap_index2 = rng.gen_range(0, L);
