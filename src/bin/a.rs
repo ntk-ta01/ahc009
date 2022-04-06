@@ -89,8 +89,8 @@ fn annealing(
     // s_temp: f64,
     // e_temp: f64,
 ) {
-    const T0: f64 = 90.0;
-    const T1: f64 = 0.1;
+    const T0: f64 = 10.0;
+    const T1: f64 = 0.00001;
     let mut temp = T0;
     // let mut temp = s_temp;
     let mut prob;
@@ -106,6 +106,7 @@ fn annealing(
             if passed >= 1.0 {
                 break;
             }
+            // eprintln!("{} {}", temp, now_score);
             temp = T0.powf(1.0 - passed) * T1.powf(passed);
             // temp = s_temp.powf(1.0 - passed) * e_temp.powf(passed);
             count = 0;
