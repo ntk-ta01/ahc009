@@ -1,8 +1,9 @@
 #![allow(non_snake_case, unused_macros, clippy::needless_range_loop)]
+use itertools::Itertools;
 use proconio::{input, marker::Chars};
 use rand::{Rng, SeedableRng};
 
-const TIMELIMIT: f64 = 1.9;
+const TIMELIMIT: f64 = 1.92;
 const N: usize = 20;
 const L: usize = 200;
 const DIJ: [(usize, usize); 4] = [(!0, 0), (0, !0), (1, 0), (0, 1)];
@@ -66,19 +67,74 @@ fn main() {
 
     let input = parse_input();
     // let (input, s_temp, e_temp) = parse_input();
-
-    let mut output = DIR
-        .iter()
-        .cycle()
-        .take(L)
-        .collect::<String>()
-        .chars()
-        .collect::<Vec<char>>();
+    let mut output = find_path(&input, &mut rng);
+    // let mut output = find_path(&input);
     annealing(&input, &mut output, &mut timer, &mut rng);
     // annealing(&input, &mut output, &mut timer, &mut rng, s_temp, e_temp);
     let answer = output.iter().collect::<String>();
     println!("{}", answer);
     // eprintln!("{}", compute_score(&input, &output).0);
+}
+
+fn find_path(input: &Input, rng: &mut rand_chacha::ChaCha20Rng) -> Vec<char> {
+    // fn find_path(input: &Input) -> Vec<char> {
+    let mut heap = std::collections::BinaryHeap::new();
+    let mut dist = vec![vec![i32::max_value(); N]; N];
+    let mut prev = vec![vec![!0; N]; N];
+    let mut weight = vec![vec![0; N]; N];
+    for line in weight.iter_mut() {
+        for w in line.iter_mut() {
+            *w = rng.gen_range(1i32, 10001i32);
+        }
+    }
+    dist[input.s.0][input.s.1] = 0;
+    heap.push((0, input.s));
+    while let Some((cost, (i, j))) = heap.pop() {
+        let cost = -cost;
+        if cost > dist[i][j] {
+            continue;
+        }
+        for (d, &(di, dj)) in DIJ.iter().enumerate() {
+            if !input.can_move(i, j, d) {
+                continue;
+            }
+            let ni = i + di;
+            let nj = j + dj;
+            if dist[ni][nj] > cost + weight[i][j] {
+                dist[ni][nj] = cost + weight[i][j];
+                prev[ni][nj] = d;
+                heap.push((-(cost + weight[i][j]), (ni, nj)));
+            }
+        }
+    }
+
+    // 経路復元
+    let mut output = vec![];
+    let mut p = input.t;
+    while p != input.s {
+        let d = prev[p.0][p.1];
+        output.push(DIR[d]);
+        let q = (p.0 - DIJ[d].0, p.1 - DIJ[d].1);
+        p = q;
+    }
+    output.reverse();
+    // ダブらせ
+    // while output.len() < L {
+    //     let duplicated_index = rng.gen_range(0, output.len());
+    //     let element = output[duplicated_index];
+    //     output.insert(duplicated_index, element);
+    // }
+    // Lに足りない分適当に足す
+    output.append(
+        &mut DIR
+            .iter()
+            .cycle()
+            .take(L - output.len())
+            .collect::<String>()
+            .chars()
+            .collect_vec(),
+    );
+    output
 }
 
 fn annealing(
@@ -88,7 +144,7 @@ fn annealing(
     rng: &mut rand_chacha::ChaCha20Rng,
     // s_temp: f64,
     // e_temp: f64,
-) {
+) -> i64 {
     const T0: f64 = 10.0;
     const T1: f64 = 0.00001;
     let mut temp = T0;
@@ -143,6 +199,7 @@ fn annealing(
     }
     eprintln!("{}", best_score);
     *output = best_output;
+    best_score
 }
 
 fn compute_score(input: &Input, out: &[char]) -> (i64, String, Vec<Vec<f64>>) {
