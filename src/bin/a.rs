@@ -3,7 +3,7 @@ use itertools::Itertools;
 use proconio::{input, marker::Chars};
 use rand::{Rng, SeedableRng};
 
-const TIMELIMIT: f64 = 1.92;
+const TIMELIMIT: f64 = 1.935;
 const N: usize = 20;
 const L: usize = 200;
 const DIJ: [(usize, usize); 4] = [(!0, 0), (0, !0), (1, 0), (0, 1)];
@@ -170,18 +170,27 @@ fn annealing(
         count += 1;
 
         let mut new_out = output.clone();
-        // 2点swapと1点変更
+        // 2点swapと1点変更と1点削除と1点挿入
         if rng.gen_bool(0.2) {
             // swap
-            let swap_index1 = rng.gen_range(0, L);
-            let swap_index2 = rng.gen_range(0, L);
+            let swap_index1 = rng.gen_range(0, new_out.len());
+            let swap_index2 = rng.gen_range(0, new_out.len());
             let out1 = new_out[swap_index1];
             let out2 = new_out[swap_index2];
             new_out[swap_index1] = out2;
             new_out[swap_index2] = out1;
+        } else if new_out.len() < L && rng.gen_bool(0.4) {
+            // insert
+            let insert_index = rng.gen_range(0, new_out.len());
+            let insert_dir = rng.gen_range(0, 4);
+            new_out.insert(insert_index, DIR[insert_dir]);
+        } else if new_out.len() > L / 2 && rng.gen_bool(0.4) {
+            // remove
+            let remove_index = rng.gen_range(0, new_out.len());
+            new_out.remove(remove_index);
         } else {
             // update
-            let update_index = rng.gen_range(0, L);
+            let update_index = rng.gen_range(0, new_out.len());
             let new_dir = rng.gen_range(0, 4);
             new_out[update_index] = DIR[new_dir];
         }
