@@ -84,7 +84,7 @@ fn find_path(input: &Input, rng: &mut rand_chacha::ChaCha20Rng) -> Vec<char> {
     let mut weight = vec![vec![0; N]; N];
     for line in weight.iter_mut() {
         for w in line.iter_mut() {
-            *w = rng.gen_range(1i32, 10001i32);
+            *w = rng.gen_range(1i32, 1001i32);
         }
     }
     dist[input.s.0][input.s.1] = 0;
