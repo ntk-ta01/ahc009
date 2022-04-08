@@ -156,6 +156,7 @@ fn annealing(
 
     let mut best_score = now_score;
     let mut best_output = output.clone();
+    const NEIGH_COUNT: i32 = 6;
     loop {
         if count >= 100 {
             let passed = timer.get_time() / TIMELIMIT;
@@ -170,29 +171,57 @@ fn annealing(
         count += 1;
 
         let mut new_out = output.clone();
-        // 2点swapと1点変更と1点削除と1点挿入
-        if rng.gen_bool(0.2) {
-            // swap
-            let swap_index1 = rng.gen_range(0, new_out.len());
-            let swap_index2 = rng.gen_range(0, new_out.len());
-            let out1 = new_out[swap_index1];
-            let out2 = new_out[swap_index2];
-            new_out[swap_index1] = out2;
-            new_out[swap_index2] = out1;
-        } else if new_out.len() < L && rng.gen_bool(0.4) {
-            // insert
-            let insert_index = rng.gen_range(0, new_out.len());
-            let insert_dir = rng.gen_range(0, 4);
-            new_out.insert(insert_index, DIR[insert_dir]);
-        } else if new_out.len() > L / 2 && rng.gen_bool(0.4) {
-            // remove
-            let remove_index = rng.gen_range(0, new_out.len());
-            new_out.remove(remove_index);
-        } else {
-            // update
-            let update_index = rng.gen_range(0, new_out.len());
-            let new_dir = rng.gen_range(0, 4);
-            new_out[update_index] = DIR[new_dir];
+        let neigh_type = rng.gen_range(0, NEIGH_COUNT);
+        match neigh_type {
+            0 => {
+                // swap
+                let swap_index1 = rng.gen_range(0, new_out.len());
+                let swap_index2 = rng.gen_range(0, new_out.len());
+                let out1 = new_out[swap_index1];
+                let out2 = new_out[swap_index2];
+                new_out[swap_index1] = out2;
+                new_out[swap_index2] = out1;
+            }
+            1 => {
+                if new_out.len() == L {
+                    continue;
+                }
+                // insert
+                let insert_index = rng.gen_range(0, new_out.len());
+                let insert_dir = rng.gen_range(0, 4);
+                new_out.insert(insert_index, DIR[insert_dir]);
+            }
+            2 => {
+                if new_out.len() < 2 {
+                    continue;
+                }
+                // remove
+                let remove_index = rng.gen_range(0, new_out.len());
+                new_out.remove(remove_index);
+            }
+            3 => {
+                if new_out.len() == L {
+                    continue;
+                }
+                // duplicate
+                let dup_index = rng.gen_range(0, new_out.len());
+                new_out.insert(dup_index, new_out[dup_index]);
+            }
+            4 => {
+                // move
+                let src_index = rng.gen_range(0, new_out.len());
+                let move_dir = new_out[src_index];
+                new_out.remove(src_index);
+                let dst_index = rng.gen_range(0, new_out.len());
+                new_out.insert(dst_index, move_dir);
+            }
+            5 => {
+                // update
+                let update_index = rng.gen_range(0, new_out.len());
+                let new_dir = rng.gen_range(0, 4);
+                new_out[update_index] = DIR[new_dir];
+            }
+            _ => unreachable!(),
         }
         let new_score = compute_score(input, &new_out).0;
         prob = f64::exp((new_score - now_score) as f64 / temp);
