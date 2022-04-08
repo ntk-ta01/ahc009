@@ -3,7 +3,7 @@ use itertools::Itertools;
 use proconio::{input, marker::Chars};
 use rand::{Rng, SeedableRng};
 
-const TIMELIMIT: f64 = 1.935;
+const TIMELIMIT: f64 = 1.95;
 const N: usize = 20;
 const L: usize = 200;
 const DIJ: [(usize, usize); 4] = [(!0, 0), (0, !0), (1, 0), (0, 1)];
@@ -63,7 +63,7 @@ fn parse_input() -> Input {
 
 fn main() {
     let mut timer = Timer::new();
-    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(0);
+    let mut rng = rand_chacha::ChaCha20Rng::seed_from_u64(7_300_000_000);
 
     let input = parse_input();
     // let (input, s_temp, e_temp) = parse_input();
@@ -152,7 +152,7 @@ fn annealing(
     let mut prob;
 
     let mut count = 0;
-    let mut now_score = compute_score(input, output).0;
+    let mut now_score = unsafe { compute_score(input, output).0 };
 
     let mut best_score = now_score;
     let mut best_output = output.clone();
@@ -223,7 +223,7 @@ fn annealing(
             }
             _ => unreachable!(),
         }
-        let new_score = compute_score(input, &new_out).0;
+        let new_score = unsafe { compute_score(input, &new_out).0 };
         prob = f64::exp((new_score - now_score) as f64 / temp);
         if now_score < new_score || rng.gen_bool(prob) {
             now_score = new_score;
@@ -240,9 +240,10 @@ fn annealing(
     best_score
 }
 
-fn compute_score(input: &Input, out: &[char]) -> (i64, String, Vec<Vec<f64>>) {
+unsafe fn compute_score(input: &Input, out: &[char]) -> (i64, Vec<Vec<f64>>) {
     let mut crt = mat![0.0; N; N];
-    crt[input.s.0][input.s.1] = 1.0;
+    *crt.get_unchecked_mut(input.s.0)
+        .get_unchecked_mut(input.s.1) = 1.0;
     let mut sum = 0.0;
     let mut goal = 0.0;
     for (i, t) in out.iter().enumerate() {
@@ -250,32 +251,42 @@ fn compute_score(input: &Input, out: &[char]) -> (i64, String, Vec<Vec<f64>>) {
             let mut next = mat![0.0; N; N];
             for i in 0..N {
                 for j in 0..N {
-                    if crt[i][j] > 0.0 {
+                    if *crt.get_unchecked(i).get_unchecked(j) > 0.0 {
                         if input.can_move(i, j, d) {
-                            let i2 = i + DIJ[d].0;
-                            let j2 = j + DIJ[d].1;
-                            next[i2][j2] += crt[i][j] * (1.0 - input.p);
-                            next[i][j] += crt[i][j] * input.p;
+                            let i2 = i + DIJ.get_unchecked(d).0;
+                            let j2 = j + DIJ.get_unchecked(d).1;
+                            *next.get_unchecked_mut(i2).get_unchecked_mut(j2) +=
+                                crt.get_unchecked(i).get_unchecked(j) * (1.0 - input.p);
+                            *next.get_unchecked_mut(i).get_unchecked_mut(j) +=
+                                crt.get_unchecked(i).get_unchecked(j) * input.p;
+
+                            // next[i2][j2] += crt[i][j] * (1.0 - input.p);
+                            // next[i][j] += crt[i][j] * input.p;
                         } else {
-                            next[i][j] += crt[i][j];
+                            *next.get_unchecked_mut(i).get_unchecked_mut(j) +=
+                                crt.get_unchecked(i).get_unchecked(j);
+
+                            // next[i][j] += crt[i][j];
                         }
                     }
                 }
             }
             crt = next;
-            sum += crt[input.t.0][input.t.1] * (2 * L - i) as f64;
-            goal += crt[input.t.0][input.t.1];
-            crt[input.t.0][input.t.1] = 0.0;
+            sum += crt.get_unchecked(input.t.0).get_unchecked(input.t.1) * (2 * L - i) as f64;
+            goal += crt.get_unchecked(input.t.0).get_unchecked(input.t.1);
+            *crt.get_unchecked_mut(input.t.0)
+                .get_unchecked_mut(input.t.1) = 0.0;
+            // sum += crt[input.t.0][input.t.1] * (2 * L - i) as f64;
+            // goal += crt[input.t.0][input.t.1];
+            // crt[input.t.0][input.t.1] = 0.0;
         } else {
-            return (0, format!("illegal char: {}", *t), crt);
+            return (0, crt);
         }
     }
-    crt[input.t.0][input.t.1] = goal;
-    (
-        (1e8 * sum / (2 * L) as f64).round() as i64,
-        String::new(),
-        crt,
-    )
+    *crt.get_unchecked_mut(input.t.0)
+        .get_unchecked_mut(input.t.1) = goal;
+    // crt[input.t.0][input.t.1] = goal;
+    ((1e8 * sum / (2 * L) as f64).round() as i64, crt)
 }
 
 fn get_time() -> f64 {
